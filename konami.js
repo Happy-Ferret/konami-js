@@ -1,11 +1,11 @@
 /*
- * Konami-JS ~ 
- * :: Now with support for touch events and multiple instances for 
+ * Konami-JS ~
+ * :: Now with support for touch events and multiple instances for
  * :: those situations that call for multiple easter eggs!
  * Code: http://konami-js.googlecode.com/
  * Examples: http://www.snaptortoise.com/konami-js
- * Copyright (c) 2009 George Mandis (georgemandis.com, snaptortoise.com)
- * Version: 1.4.2 (9/2/2013)
+ * Copyright (c) 2009 George Mandis (georgemandis.com, snaptortoise.com) and 2015 Tom Bebbington
+ * Version: 1.5.0 (7/3/2015)
  * Licensed under the MIT License (http://opensource.org/licenses/MIT)
  * Tested in: Safari 4+, Google Chrome 4+, Firefox 3+, IE7+, Mobile Safari 2.2.1 and Dolphin Browser
  */
@@ -40,9 +40,56 @@ var Konami = function (callback) {
 				}
 			}, this);
 			this.iphone.load(link);
+			this.gamepads.load(link);
 		},
 		code: function (link) {
 			window.location = link
+		},
+		gamepads: {
+			pattern: "121213131415141501",
+			input: "",
+			before: {},
+			load: function(link) {
+				var self = konami.gamepads;
+				self.link = link;
+				self.gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
+				if(self.gamepads) {
+					setTimeout(konami.gamepads.update, 50)
+				}
+			},
+			update: function() {
+				function is_down(b) {
+				  if (typeof(b) == "object") {
+				    return b.pressed;
+				  }
+				  return b == 1.0;
+				}
+				var self = konami.gamepads;
+				self.gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
+				for(var i = 0; i < self.gamepads.length; i++) {
+					var gamepad = self.gamepads[i];
+					if(!gamepad) {
+						continue;
+					}
+					for(var i = 0; i < 20; i++) {
+						if (is_down(gamepad.buttons[i]) && !self.before[gamepad.index][i]) {
+							self.input += i
+						}
+					}
+					self.before[gamepad.index] = {};
+					for(var i = 0; i < 20; i++) {
+						self.before[gamepad.index][i] = is_down(gamepad.buttons[i])
+					}
+					if (self.input.length > self.pattern.length) {
+						self.input = self.input.substr((self.input.length - self.pattern.length));
+					}
+					if (self.input == self.pattern) {
+						konami.code(self.link);
+						self.input = [];
+					}
+				}
+				setTimeout(konami.gamepads.update, 50)
+			}
 		},
 		iphone: {
 			start_x: 0,
